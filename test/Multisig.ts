@@ -138,7 +138,49 @@ import {
 
         });
 
-        
+        describe("Update Quorum", async function() {
+
+          it("Should create an UpdateQuorum Successfully", async function(){
+             const { MultisigDeployed, owner } =
+                    await loadFixture(deployMultisig);
+
+              const newQuorum = 3;
+
+              await MultisigDeployed.updateQuorum(newQuorum);
+
+              const txCount = await MultisigDeployed.txCount();
+              expect(txCount).equal(1);
+
+              const tx = await MultisigDeployed.transactions(1);
+              expect(tx.trxType).to.equal(1);
+
+              expect(tx.newQuorum).to.equal(newQuorum);
+          });
+        });
+
+        describe("Approve New Quorum", async function(){
+          
+
+          it("Should Approve New UpdateQuorum", async function () {
+            const { MultisigDeployed, owner , otherAccount} =
+                    await loadFixture(deployMultisig);
+
+              const newQuorum = 3;
+
+              await MultisigDeployed.updateQuorum(newQuorum);
+              
+              await MultisigDeployed.connect(otherAccount).approveNewQuorum(1);
+
+              const tx = await MultisigDeployed.transactions(1);
+              expect(tx.noOfApproval).equal(2);
+              expect(tx.isCompleted).to.be.true;
+
+              const updateQuorum = await MultisigDeployed.quorum();
+              expect(updateQuorum).to.equal(newQuorum);
+
+
+          } );
+        });
     
   });
 
