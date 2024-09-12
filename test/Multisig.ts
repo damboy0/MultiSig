@@ -87,6 +87,58 @@ import {
                 ).to.be.revertedWith("insufficient funds");
             });
         });
+
+        describe("Approve", async function() {
+          it("Should Approve Transfer", async function(){
+            const { MultisigDeployed, otherAccount, thirdAccount, token } =
+                    await loadFixture(deployMultisig);
+            const amount = ethers.parseUnits("1", 18);
+
+            token.transfer(MultisigDeployed,amount);
+
+            await MultisigDeployed.transfer(amount,otherAccount.address,token);
+
+            await MultisigDeployed.connect(thirdAccount).approveTx(1);
+
+            const tx = await MultisigDeployed.transactions(1);
+
+
+            expect(tx.noOfApproval).to.equal(2);
+            expect(tx.isCompleted).to.be.true;
+          });
+
+
+          it("Should not approve Transaction twice", async function(){
+
+            const { MultisigDeployed, otherAccount, token } =
+                    await loadFixture(deployMultisig);
+            const amount = ethers.parseUnits("1", 18);
+
+            token.transfer(MultisigDeployed,amount);
+
+            await MultisigDeployed.transfer(amount,otherAccount.address,token);
+
+            await expect(MultisigDeployed.approveTx(1)).to.be.revertedWith("can't sign twice");
+
+          });
+
+          it("Should revert if it is not a valid signer", async function(){
+
+            const { MultisigDeployed, owner, otherAccount, invalidSigner, token } =
+                    await loadFixture(deployMultisig);
+                const amount = ethers.parseUnits("1", 18);
+
+                token.transfer(MultisigDeployed,amount);
+
+                await MultisigDeployed.transfer(amount,otherAccount.address,token)
+                
+
+                await expect(MultisigDeployed.connect(invalidSigner).approveTx(1)).to.be.revertedWith("not a valid signer");
+          })
+
+        });
+
+        
     
   });
 

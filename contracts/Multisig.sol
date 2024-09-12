@@ -89,6 +89,10 @@ contract Multisig {
         Transaction storage trx = transactions[_txId];
 
         require(trx.id != 0, "invalid tx id");
+         require(
+            trx.trxType == TrxType.transferFund,
+            "Invalid transaction type"
+        );
          
         require(IERC20(trx.tokenAddress).balanceOf(address(this)) >= trx.amount, "insufficient funds");
         require(!trx.isCompleted, "transaction already completed");
