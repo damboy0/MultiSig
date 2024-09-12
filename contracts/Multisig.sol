@@ -7,8 +7,16 @@ contract Multisig {
     uint8 public noOfValidSigners;
     uint256 public txCount;
 
+     enum TrxType {
+        transferFund,
+        updateQuorum
+    }
+
+
     struct Transaction {
         uint256 id;
+        TrxType trxType;
+        uint8 newQuorum;
         uint256 amount;
         address sender;
         address recipient;
@@ -47,6 +55,7 @@ contract Multisig {
         quorum = _quorum;
     }
 
+
     function transfer(uint256 _amount, address _recipient, address _tokenAddress) external {
         require(isValidSigner[msg.sender], "invalid signer");
         require(msg.sender != address(0), "address zero found");
@@ -61,6 +70,7 @@ contract Multisig {
         Transaction storage trx = transactions[_txId];
         
         trx.id = _txId;
+        trx.trxType = TrxType.transferFund;
         trx.amount = _amount;
         trx.recipient = _recipient;
         trx.sender = msg.sender;
@@ -72,6 +82,8 @@ contract Multisig {
 
         txCount += 1;
     }
+
+
 
     function approveTx(uint8 _txId) external {
         Transaction storage trx = transactions[_txId];
@@ -101,9 +113,51 @@ contract Multisig {
         }
     }
 
+
+
+
     function updateQuorum(uint8 _newQuorum) external {
         require(_newQuorum > 0, "can't send zero quorum");
         require(_newQuorum <= noOfValidSigners, "quorum greater than valid signers");
+        require(isValidSigner[msg.sender], "invalid signer");
+
+        uint256 updateId = txCount + 1;
+
+        Transaction storage updateQuorumRequest = transactions[updateId];
+        updateQuorumRequest.id = updateId;
+        updateQuorumRequest.transactionSigners.push(msg.sender);
+        updateQuorumRequest.sender = msg.sender;
+        updateQuorumRequest.timestamp = block.timestamp;
+        updateQuorumRequest.trxType = TrxType.updateQuorum;
+        updateQuorumRequest.noOfApproval += 1;
+        updateQuorumRequest.newQuorum = _newQuorum;
+        hasSigned[msg.sender][updateId] = true;
+        txCount += 1;
+
+
+    }
+
+
+    function approveNewQuorum(uint256 _txId) external {
+        Transaction storage updateQuorumRequest = transactions[_txId];
+
+        require(updateQuorumRequest.id != 0, "invalid updateQuorum id");
+        require(updateQuorumRequest.trxType == TrxType.updateQuorum,"Invalid Transaction Type");
+
+        require(isValidSigner[msg.sender], "not a valid signer");
+        require(!hasSigned[msg.sender][_txId], "can't sign twice");
+
+        require(!updateQuorumRequest.isCompleted, "Quorum Update Completed");
+        require(updateQuorumRequest.noOfApproval < quorum,"no of approvals reached");
+
+        hasSigned[msg.sender][_txId] = true;
+        updateQuorumRequest.noOfApproval += 1;
+        updateQuorumRequest.transactionSigners.push(msg.sender);
+
+        if (updateQuorumRequest.noOfApproval == quorum) {
+            updateQuorumRequest.isCompleted = true;
+            quorum = updateQuorumRequest.newQuorum;
+        }
 
     }
 }
