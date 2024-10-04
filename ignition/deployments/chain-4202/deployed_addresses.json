@@ -1,3 +1,4 @@
 {
-  "MultisigFactoryModule#MultisigFactory": "0x5cb902aac5C03ED4f103c7cD67e664BCC6D8e628"
+  "MultisigFactoryModule#MultisigFactory": "0x5cb902aac5C03ED4f103c7cD67e664BCC6D8e628",
+  "MultisigModule#Multisig": "0x1E092126E4AB12503d37dD08E20F9192b8439458"
 }
